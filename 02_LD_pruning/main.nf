@@ -289,6 +289,8 @@ process COMBINE_PRUNED_LISTS {
 
     tag "genome-wide"
 
+    container params.plink2_image
+
     publishDir "${params.outdir}", mode: 'copy'
 
 
@@ -550,15 +552,26 @@ workflow {
     }
 
 
-    if (!(params.r2 instanceof Number) ||
-        params.r2 <= 0 ||
-        params.r2 >= 1) {
+    def r2_value
 
-        error """
-        Invalid --r2 value: ${params.r2}
+    try {
+    r2_value = params.r2.toString().toBigDecimal()
+    }
+    catch (Exception e) {
+    error """
+    Invalid --r2 value: ${params.r2}
 
-        r2 must be > 0 and < 1.
-        """.stripIndent()
+    r2 must be numeric and > 0 and < 1.
+    """.stripIndent()
+    }
+
+    if (r2_value <= 0 || r2_value >= 1) {
+
+    error """
+    Invalid --r2 value: ${params.r2}
+
+    r2 must be > 0 and < 1.
+    """.stripIndent()
     }
 
 
