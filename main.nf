@@ -3,7 +3,7 @@
 nextflow.enable.dsl=2
 
 
-/*
+/**
 ===============================================================================
 
 REGENIE Step 1: Whole-genome regression model
@@ -59,18 +59,19 @@ Container:
 // Parameters
 // -----------------------------------------------------------------------------
 
-params.genotype_prefix = null
+params.pgen = null
+params.pvar = null
+params.psam = null
 
 params.phenotype = null
-
 params.covariates = null
 
 params.outdir = "REGENIE.Step1.results"
 
 params.out_prefix = "GEL_CM_REGENIE_step1"
 
-
 params.bsize = 1000
+
 
 
 // -----------------------------------------------------------------------------
@@ -136,7 +137,7 @@ process REGENIE_STEP1 {
 
 
 
-    echo "Input genotype:"
+    echo "Input genotype prefix:"
     echo "${prefix}"
 
 
@@ -153,31 +154,31 @@ process REGENIE_STEP1 {
 
 
 
-    regenie \\
+    regenie \
 
-        --step 1 \\
+        --step 1 \
 
-        --pgen ${prefix} \\
+        --pgen ${prefix} \
 
-        --phenoFile ${phenotype} \\
+        --phenoFile ${phenotype} \
 
-        --phenoCol CM \\
+        --phenoCol CM \
 
-        --covarFile ${covariates} \\
+        --covarFile ${covariates} \
 
-        --catCovarList genetic_sex,study_source \\
+        --catCovarList genetic_sex,study_source \
 
-        --maxCatLevels 30 \\
+        --maxCatLevels 30 \
 
-        --bt \\
+        --bt \
 
-        --bsize ${params.bsize} \\
+        --bsize ${params.bsize} \
 
-        --lowmem \\
+        --lowmem \
 
-        --lowmem-prefix tmp/regenie_step1_tmp_preds \\
+        --lowmem-prefix tmp/regenie_step1_tmp_preds \
 
-        --threads ${task.cpus} \\
+        --threads ${task.cpus} \
 
         --out ${params.out_prefix}
 
@@ -203,15 +204,25 @@ process REGENIE_STEP1 {
 workflow {
 
 
-    /*
+    /**
     ---------------------------------------------------------------------------
     Validate parameters
     ---------------------------------------------------------------------------
     */
 
 
-    if( !params.genotype_prefix ) {
-        error "Missing parameter: --genotype_prefix"
+    if( !params.pgen ) {
+        error "Missing parameter: --pgen"
+    }
+
+
+    if( !params.pvar ) {
+        error "Missing parameter: --pvar"
+    }
+
+
+    if( !params.psam ) {
+        error "Missing parameter: --psam"
     }
 
 
@@ -226,33 +237,25 @@ workflow {
 
 
 
-    /*
+    /**
     ---------------------------------------------------------------------------
     Input channels
     ---------------------------------------------------------------------------
     */
 
 
-    genotype_prefix = file(params.genotype_prefix)
-
-
-    genotype_base =
-        params.genotype_prefix
-
-
-
     pgen =
-        file("${genotype_base}.pgen",
+        file(params.pgen,
             checkIfExists:true)
 
 
     pvar =
-        file("${genotype_base}.pvar",
+        file(params.pvar,
             checkIfExists:true)
 
 
     psam =
-        file("${genotype_base}.psam",
+        file(params.psam,
             checkIfExists:true)
 
 
@@ -268,10 +271,46 @@ workflow {
 
 
 
+    /*
+    Extract PLINK2 prefix automatically
+
+    Example:
+        REGENIE.Step1.HQ_pruned.pgen
+
+    becomes:
+        REGENIE.Step1.HQ_pruned
+    */
+
+    genotype_prefix = pgen.baseName
+
+
+
+    /*
+    Ensure PLINK2 files match
+    */
+
+    if (
+        genotype_prefix != pvar.baseName ||
+        genotype_prefix != psam.baseName
+    ) {
+
+        error """
+        PLINK2 files do not share the same prefix.
+
+        pgen: ${pgen.baseName}
+        pvar: ${pvar.baseName}
+        psam: ${psam.baseName}
+
+        Please provide matching .pgen/.pvar/.psam files.
+        """
+    }
+
+
+
     genotype_ch =
         Channel.of(
             tuple(
-                genotype_base,
+                genotype_prefix,
                 pgen,
                 pvar,
                 psam
@@ -280,7 +319,7 @@ workflow {
 
 
 
-    /*
+    /**
     ---------------------------------------------------------------------------
     Run REGENIE Step 1
     ---------------------------------------------------------------------------
