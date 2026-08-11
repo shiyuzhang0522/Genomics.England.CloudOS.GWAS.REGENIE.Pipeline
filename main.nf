@@ -3,7 +3,7 @@
 nextflow.enable.dsl=2
 
 
-/**
+/*
 ===============================================================================
 
 REGENIE Step 1: Whole-genome regression model
@@ -68,10 +68,11 @@ params.covariates = null
 
 params.outdir = "REGENIE.Step1.results"
 
-params.out_prefix = "GEL_CM_REGENIE_step1"
-
 params.bsize = 1000
 
+
+// Fixed output prefix for reproducible analysis
+def REGENIE_OUT_PREFIX = "GEL_CM_REGENIE_step1"
 
 
 // -----------------------------------------------------------------------------
@@ -81,7 +82,7 @@ params.bsize = 1000
 process REGENIE_STEP1 {
 
 
-    tag "${params.out_prefix}"
+    tag "GEL_CM_REGENIE_step1"
 
 
     cpus 16
@@ -112,7 +113,7 @@ process REGENIE_STEP1 {
 
     output:
 
-    path "${params.out_prefix}*"
+    path "${REGENIE_OUT_PREFIX}*"
 
 
 
@@ -126,8 +127,8 @@ process REGENIE_STEP1 {
 
     echo "============================================================"
     echo "REGENIE Step 1"
-    echo "Start time: \$(date)"
-    echo "Hostname:   \$(hostname)"
+    echo "Start time: \\$(date)"
+    echo "Hostname:   \\$(hostname)"
     echo "Threads:    ${task.cpus}"
     echo "============================================================"
 
@@ -150,41 +151,28 @@ process REGENIE_STEP1 {
 
 
 
-    regenie \
-
-        --step 1 \
-
-        --pgen ${prefix} \
-
-        --phenoFile ${phenotype} \
-
-        --phenoCol CM \
-
-        --covarFile ${covariates} \
-
-        --catCovarList genetic_sex,study_source \
-
-        --maxCatLevels 30 \
-
-        --bt \
-
-        --bsize ${params.bsize} \
-
-        --lowmem \
-
-        --lowmem-prefix tmp/regenie_step1_tmp_preds \
-
-        --threads ${task.cpus} \
-
-        --out ${params.out_prefix}
+    regenie \\
+        --step 1 \\
+        --pgen ${prefix} \\
+        --phenoFile ${phenotype} \\
+        --phenoCol CM \\
+        --covarFile ${covariates} \\
+        --catCovarList genetic_sex,study_source \\
+        --maxCatLevels 30 \\
+        --bt \\
+        --bsize ${params.bsize} \\
+        --lowmem \\
+        --lowmem-prefix tmp/regenie_step1_tmp_preds \\
+        --threads ${task.cpus} \\
+        --out ${REGENIE_OUT_PREFIX}
 
 
 
     echo "============================================================"
     echo "REGENIE Step 1 completed"
-    echo "End time: \$(date)"
+    echo "End time: \\$(date)"
     echo "Output prefix:"
-    echo "${params.out_prefix}"
+    echo "${REGENIE_OUT_PREFIX}"
     echo "============================================================"
 
     """
@@ -200,7 +188,7 @@ process REGENIE_STEP1 {
 workflow {
 
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Validate parameters
     ---------------------------------------------------------------------------
@@ -233,7 +221,7 @@ workflow {
 
 
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Input channels
     ---------------------------------------------------------------------------
@@ -268,22 +256,22 @@ workflow {
 
 
     /*
+    ---------------------------------------------------------------------------
     Extract PLINK2 prefix automatically
-
-    Example:
-        REGENIE.Step1.HQ_pruned.pgen
-
-    becomes:
-        REGENIE.Step1.HQ_pruned
+    ---------------------------------------------------------------------------
     */
+
 
     genotype_prefix = pgen.baseName
 
 
 
     /*
+    ---------------------------------------------------------------------------
     Ensure PLINK2 files match
+    ---------------------------------------------------------------------------
     */
+
 
     if (
         genotype_prefix != pvar.baseName ||
@@ -315,7 +303,7 @@ workflow {
 
 
 
-    /**
+    /*
     ---------------------------------------------------------------------------
     Run REGENIE Step 1
     ---------------------------------------------------------------------------
