@@ -195,11 +195,11 @@ process REGENIE_STEP2 {
     output:
 
 
-    path "chr${chr}.GEL_CM_REGENIE_step2.regenie.gz"
+    path "chr${chr}.GEL_CM_REGENIE_step2_CM.regenie.gz"
 
     path "chr${chr}.GEL_CM_REGENIE_step2.log"
 
-    path "chr${chr}.GEL_CM_REGENIE_step2.*"
+    path "chr${chr}.GEL_CM_REGENIE_step2*"
 
 
 
@@ -328,7 +328,7 @@ EOF
     # -------------------------------------------------------------------------
 
 
-    if [[ ! -s chr${chr}.GEL_CM_REGENIE_step2.regenie.gz ]]; then
+    if [[ ! -s chr${chr}.GEL_CM_REGENIE_step2_CM.regenie.gz ]]; then
 
         echo "ERROR: REGENIE output missing for chr${chr}" >&2
         exit 1
@@ -342,7 +342,7 @@ EOF
     echo "chr${chr} REGENIE Step 2 completed"
     echo "End time: \$(date)"
     echo "Output:"
-    echo "chr${chr}.GEL_CM_REGENIE_step2.regenie.gz"
+    echo "chr${chr}.GEL_CM_REGENIE_step2_CM.regenie.gz"
     echo "============================================================"
 
 
