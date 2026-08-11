@@ -265,9 +265,9 @@ process REGENIE_STEP2 {
 
     do
 
-        if [[ ! -s "${file}" ]]; then
+        if [[ ! -s "\${file}" ]]; then
 
-            echo "ERROR: missing or empty input file: ${file}" >&2
+            echo "ERROR: missing or empty input file: \${file}" >&2
             exit 1
 
         fi
