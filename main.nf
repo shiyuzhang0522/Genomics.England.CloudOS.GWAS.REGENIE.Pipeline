@@ -84,10 +84,6 @@ process REGENIE_STEP1 {
     tag "${params.out_prefix}"
 
 
-    container:
-    "ghcr.io/shiyuzhang0522/regenie:4.1.2"
-
-
     cpus 16
 
     memory "100 GB"
