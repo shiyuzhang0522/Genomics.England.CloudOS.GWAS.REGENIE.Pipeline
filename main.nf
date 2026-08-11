@@ -10,9 +10,10 @@ REGENIE Step 1: Whole-genome regression model
 
 Phenotype:
     Cutaneous melanoma (CM)
-    Binary trait:
-        0 = control
-        1 = case
+
+Binary trait:
+    0 = control
+    1 = case
 
 Dataset:
     Genomics England (GEL)
@@ -39,8 +40,8 @@ Covariates included:
     - PC1-PC20
 
 Categorical covariates:
-    genetic_sex
-    study_source
+    - genetic_sex
+    - study_source
 
 Model:
     Binary trait (--bt)
@@ -49,7 +50,7 @@ Software:
     REGENIE v4.1.2
 
 Container:
-    ghcr.io/shiyuzhang0522/regenie:4.1.2
+    Defined in nextflow.config
 
 ===============================================================================
 */
@@ -133,7 +134,6 @@ process REGENIE_STEP1 {
     echo "============================================================"
 
 
-
     echo "Input genotype prefix:"
     echo "${prefix}"
 
@@ -151,19 +151,19 @@ process REGENIE_STEP1 {
 
 
 
-    regenie \\
-        --step 1 \\
-        --pgen ${prefix} \\
-        --phenoFile ${phenotype} \\
-        --phenoCol CM \\
-        --covarFile ${covariates} \\
-        --catCovarList genetic_sex,study_source \\
-        --maxCatLevels 30 \\
-        --bt \\
-        --bsize ${params.bsize} \\
-        --lowmem \\
-        --lowmem-prefix tmp/regenie_step1_tmp_preds \\
-        --threads ${task.cpus} \\
+    regenie \
+        --step 1 \
+        --pgen ${prefix} \
+        --phenoFile ${phenotype} \
+        --phenoCol CM \
+        --covarFile ${covariates} \
+        --catCovarList genetic_sex,study_source \
+        --maxCatLevels 30 \
+        --bt \
+        --bsize ${params.bsize} \
+        --lowmem \
+        --lowmem-prefix tmp/regenie_step1_tmp_preds \
+        --threads ${task.cpus} \
         --out ${REGENIE_OUT_PREFIX}
 
 
@@ -229,29 +229,38 @@ workflow {
 
 
     pgen =
-        file(params.pgen,
-            checkIfExists:true)
+        file(
+            params.pgen,
+            checkIfExists: true
+        )
 
 
     pvar =
-        file(params.pvar,
-            checkIfExists:true)
+        file(
+            params.pvar,
+            checkIfExists: true
+        )
 
 
     psam =
-        file(params.psam,
-            checkIfExists:true)
-
+        file(
+            params.psam,
+            checkIfExists: true
+        )
 
 
     phenotype =
-        file(params.phenotype,
-            checkIfExists:true)
+        file(
+            params.phenotype,
+            checkIfExists: true
+        )
 
 
     covariates =
-        file(params.covariates,
-            checkIfExists:true)
+        file(
+            params.covariates,
+            checkIfExists: true
+        )
 
 
 
