@@ -194,9 +194,16 @@ process REGENIE_STEP2 {
 
     output:
 
-    path "chr${chr}.GEL_CM_REGENIE_step2_CM.regenie.gz"
-    path "chr${chr}.GEL_CM_REGENIE_step2*"
 
+    tuple val(chr),
+      path("chr${chr}.GEL_CM_REGENIE_step2_CM.regenie.gz"),
+      emit: regenie_results
+
+
+    tuple val(chr),
+      path("chr${chr}.GEL_CM_REGENIE_step2.log"),
+      emit: regenie_logs
+    
 
     script:
 
