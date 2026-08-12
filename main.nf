@@ -194,10 +194,8 @@ process REGENIE_STEP2 {
 
     output:
 
-
-    path "chr${chr}.GEL_CM_REGENIE_step2*",
-        optional: true
-
+    path "chr${chr}.GEL_CM_REGENIE_step2_CM.regenie.gz"
+    path "chr${chr}.GEL_CM_REGENIE_step2*"
 
 
     script:
