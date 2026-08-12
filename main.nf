@@ -513,11 +513,3 @@ workflow {
 
 
 }
-
-// ============================================================================
-// Executor robustness
-// ============================================================================
-// Allow extra time for CloudOS shared filesystem output synchronization.
-executor {
-    exitReadTimeout = '5 min'
-}
