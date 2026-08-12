@@ -232,10 +232,8 @@ process REGENIE_STEP2 {
     echo "Chromosome: ${chr}"
     echo "Attempt:    ${task.attempt}"
     echo "Task hash:  ${task.hash}"
-    echo "Hostname:"
-    hostname
-    echo "Date:"
-    date
+    echo "Hostname:   \\$(hostname)"
+    echo "Date:       \\$(date)"
     echo "Threads:    ${task.cpus}"
 
     echo
@@ -512,12 +510,4 @@ workflow {
     )
 
 
-}
-
-// ============================================================================
-// Executor robustness
-// ============================================================================
-// Allow extra time for CloudOS shared filesystem output synchronization.
-executor {
-    exitReadTimeout = '5 min'
 }
