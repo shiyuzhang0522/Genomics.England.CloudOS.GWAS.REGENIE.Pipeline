@@ -208,9 +208,9 @@ Summary collector
 process SUMMARY {
 
 
-    tag:
-
-    "VEP_annotation_summary"
+    tag {
+        "VEP_annotation_summary"
+    }
 
 
 
