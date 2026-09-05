@@ -5,7 +5,6 @@ nextflow.enable.dsl=2
 
 /*
 ============================================================
-
 GEL AggV3 VEP Annotation Extractor
 
 Input:
@@ -27,7 +26,7 @@ Author:
     Shiyu Zhang
 
 Version:
-    v1.0.1
+    v1.0.2
 
 ============================================================
 */
@@ -46,11 +45,10 @@ params.extract_script =
 if( !params.manifest ){
 
     error """
-    Missing required parameter:
+Missing required parameter:
 
-    --manifest functional_annotation_shards.csv
-
-    """
+--manifest functional_annotation_shards.csv
+"""
 }
 
 
@@ -59,9 +57,9 @@ workflow {
 
 
     /*
-    ==========================================
-    Read manifest
-    ==========================================
+    ========================================================
+    Read GEL functional annotation manifest
+    ========================================================
     */
 
 
@@ -71,34 +69,26 @@ workflow {
         .map { row ->
 
             tuple(
-
                 row.chr,
                 row.start,
                 row.end,
                 row.region,
                 row.shard,
                 row.subshard,
-
-                file(row.func_anno_vcf),
-
-                file(row.func_anno_vcf_index)
-
+                row.func_anno_vcf,
+                row.func_anno_vcf_index
             )
-
         }
 
 
-
-    results_ch = EXTRACT_VEP_ANNOTATION(
+    extracted_ch = EXTRACT_VEP_ANNOTATION(
         manifest_ch
     )
 
 
-
-    results_ch
+    extracted_ch
         .collect()
         .set { all_results }
-
 
 
     SUMMARY(
@@ -106,6 +96,7 @@ workflow {
     )
 
 }
+
 
 
 
@@ -137,42 +128,34 @@ process EXTRACT_VEP_ANNOTATION {
     publishDir:
 
         "${params.outdir}/VEP_annotation",
-
-        mode:"copy"
+        mode: "copy"
 
 
 
     input:
 
 
-    tuple
-
-    val(chr),
-    val(start),
-    val(end),
-    val(region),
-    val(shard),
-    val(subshard),
-
-    path(vcf),
-
-    path(vcf_index)
+    tuple val(chr),
+          val(start),
+          val(end),
+          val(region),
+          val(shard),
+          val(subshard),
+          path(vcf),
+          path(vcf_index)
 
 
 
     output:
 
 
-    tuple
-
-    val(chr),
-    val(start),
-    val(end),
-    val(region),
-    val(shard),
-    val(subshard),
-
-    path("*.tsv")
+    tuple val(chr),
+          val(start),
+          val(end),
+          val(region),
+          val(shard),
+          val(subshard),
+          path("*.tsv")
 
 
 
@@ -186,10 +169,8 @@ process EXTRACT_VEP_ANNOTATION {
 
     """
 
-    python ${params.extract_script} \\
-
-        --vcf ${vcf} \\
-
+    python ${params.extract_script} \
+        --vcf ${vcf} \
         --out ${outfile}
 
     """
@@ -209,7 +190,9 @@ process SUMMARY {
 
 
     tag {
+
         "VEP_annotation_summary"
+
     }
 
 
@@ -217,8 +200,7 @@ process SUMMARY {
     publishDir:
 
         "${params.outdir}/VEP_annotation",
-
-        mode:"copy"
+        mode: "copy"
 
 
 
@@ -241,12 +223,7 @@ process SUMMARY {
 
     def rows = records.collect { r ->
 
-
-        """
-
-${r[0]}\t${r[1]}\t${r[2]}\t${r[3]}\t${r[4]}\t${r[5]}\t${r[6].getName()}\tPASS
-
-"""
+        "${r[0]}\t${r[1]}\t${r[2]}\t${r[3]}\t${r[4]}\t${r[5]}\t${r[6].getName()}\tPASS"
 
     }
 
@@ -255,16 +232,12 @@ ${r[0]}\t${r[1]}\t${r[2]}\t${r[3]}\t${r[4]}\t${r[5]}\t${r[6].getName()}\tPASS
     """
 
 cat > VEP_annotation_summary.tsv << EOF
-
 chr\tstart\tend\tregion\tshard\tsubshard\toutput_tsv\tstatus
-
 EOF
 
 
 cat >> VEP_annotation_summary.tsv << EOF
-
-${rows.join("")}
-
+${rows.join('\n')}
 EOF
 
 """
