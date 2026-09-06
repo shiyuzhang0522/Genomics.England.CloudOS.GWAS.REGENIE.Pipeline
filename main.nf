@@ -14,36 +14,36 @@ Output:
     results/VEP_annotation/*.tsv
     results/VEP_annotation/VEP_annotation_summary.tsv
 
-
 Design:
     - one subshard = one task
     - one row = one transcript consequence
-    - VCF accessed directly from GEL S3
-    - no intermediate download management
-
+    - GEL S3 VCFs are staged automatically by Nextflow
+    - no manual S3 download or mounting
+    - one final summary table after all subshards complete
 
 Author:
     Shiyu Zhang
 
 Version:
-    v1.0.2
-
+    v1.0.3
 ============================================================
 */
 
 
-params.manifest = null
+/*
+============================================================
+Parameters
+============================================================
+*/
 
+params.manifest = null
 params.outdir = "results"
 
-
 params.extract_script =
-"${projectDir}/WGS-RV-pipeline/RV-protein-coding/Extract.VEP.Annotations/scripts/extract_v8.py"
+    "${projectDir}/WGS-RV-pipeline/RV-protein-coding/Extract.VEP.Annotations/scripts/extract_v8.py"
 
 
-
-if( !params.manifest ){
-
+if( !params.manifest ) {
     error """
 Missing required parameter:
 
@@ -52,88 +52,26 @@ Missing required parameter:
 }
 
 
-
-workflow {
-
-
-    /*
-    ========================================================
-    Read GEL functional annotation manifest
-    ========================================================
-    */
-
-
-    manifest_ch = Channel
-        .fromPath(params.manifest)
-        .splitCsv(header:true)
-        .map { row ->
-
-            tuple(
-                row.chr,
-                row.start,
-                row.end,
-                row.region,
-                row.shard,
-                row.subshard,
-                row.func_anno_vcf,
-                row.func_anno_vcf_index
-            )
-        }
-
-
-    extracted_ch = EXTRACT_VEP_ANNOTATION(
-        manifest_ch
-    )
-
-
-    extracted_ch
-        .collect()
-        .set { all_results }
-
-
-    SUMMARY(
-        all_results
-    )
-
-}
-
-
-
-
 /*
 ============================================================
-Extract VEP annotations
+Process: extract VEP annotations
 ============================================================
 */
 
-
 process EXTRACT_VEP_ANNOTATION {
 
-
     tag {
-
         "${chr}:${region}"
-
     }
 
-
     cpus 4
-
     memory "8 GB"
-
     time "48h"
 
-
-
-    publishDir:
-
-        "${params.outdir}/VEP_annotation",
-        mode: "copy"
-
+    publishDir "${params.outdir}/VEP_annotation", mode: "copy"
 
 
     input:
-
 
     tuple val(chr),
           val(start),
@@ -144,10 +82,10 @@ process EXTRACT_VEP_ANNOTATION {
           path(vcf),
           path(vcf_index)
 
+    path extract_script
 
 
     output:
-
 
     tuple val(chr),
           val(start),
@@ -158,88 +96,137 @@ process EXTRACT_VEP_ANNOTATION {
           path("*.tsv")
 
 
-
     script:
 
-
     def outfile =
-    "GEL.VEP.shard${shard}.subshard${subshard}.${region}.tsv"
-
-
+        "GEL.VEP.shard${shard}.subshard${subshard}.${region}.tsv"
 
     """
-
-    python ${params.extract_script} \
+    python ${extract_script} \
         --vcf ${vcf} \
         --out ${outfile}
-
     """
-
 }
-
 
 
 /*
 ============================================================
-Summary collector
+Process: summary collector
 ============================================================
 */
 
-
 process SUMMARY {
 
-
     tag {
-
         "VEP_annotation_summary"
-
     }
 
-
-
-    publishDir:
-
-        "${params.outdir}/VEP_annotation",
-        mode: "copy"
-
+    publishDir "${params.outdir}/VEP_annotation", mode: "copy"
 
 
     input:
 
-
-    val(records)
-
+    val(rows)
 
 
     output:
 
-
     path("VEP_annotation_summary.tsv")
-
 
 
     script:
 
-
-    def rows = records.collect { r ->
-
-        "${r[0]}\t${r[1]}\t${r[2]}\t${r[3]}\t${r[4]}\t${r[5]}\t${r[6].getName()}\tPASS"
-
-    }
-
-
-
     """
-
-cat > VEP_annotation_summary.tsv << EOF
+    cat > VEP_annotation_summary.tsv << 'EOF'
 chr\tstart\tend\tregion\tshard\tsubshard\toutput_tsv\tstatus
 EOF
 
-
-cat >> VEP_annotation_summary.tsv << EOF
+    cat >> VEP_annotation_summary.tsv << 'EOF'
 ${rows.join('\n')}
 EOF
+    """
+}
 
-"""
 
+/*
+============================================================
+Workflow
+============================================================
+*/
+
+workflow {
+
+    /*
+    --------------------------------------------------------
+    Stage extractor script from the GitHub repository
+    --------------------------------------------------------
+    */
+
+    extract_script_ch = Channel.value(
+        file(params.extract_script)
+    )
+
+
+    /*
+    --------------------------------------------------------
+    Read GEL functional annotation manifest
+    --------------------------------------------------------
+    */
+
+    manifest_ch = Channel
+        .fromPath(params.manifest)
+        .splitCsv(header: true)
+        .map { row ->
+
+            tuple(
+                row.chr,
+                row.start,
+                row.end,
+                row.region,
+                row.shard,
+                row.subshard,
+                file(row.func_anno_vcf),
+                file(row.func_anno_vcf_index)
+            )
+
+        }
+
+
+    /*
+    --------------------------------------------------------
+    Run one extraction task per subshard
+    --------------------------------------------------------
+    */
+
+    extracted_ch = EXTRACT_VEP_ANNOTATION(
+        manifest_ch,
+        extract_script_ch
+    )
+
+
+    /*
+    --------------------------------------------------------
+    Convert each completed task into one summary-table row
+    and collect all rows into a single value channel
+    --------------------------------------------------------
+    */
+
+    summary_rows_ch = extracted_ch
+        .map { chr, start, end, region, shard, subshard, tsv ->
+
+            "${chr}\t${start}\t${end}\t${region}\t${shard}\t${subshard}\t${tsv.getName()}\tPASS"
+
+        }
+        .collect()
+
+
+    /*
+    --------------------------------------------------------
+    Generate one master summary table
+    --------------------------------------------------------
+    */
+
+    SUMMARY(
+        summary_rows_ch
+    )
 }

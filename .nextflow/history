@@ -1,0 +1,4 @@
+2026-09-06 09:35:35	-	clever_stallman	-	e57bc0a5c5ac8d3902632ec6cb85dae6	4f330af6-9666-49b2-b9df-238fc7f3c16b	nextflow run main.nf --manifest /path/to/functional_annotation_shards.csv --outdir results -preview
+2026-09-06 09:48:34	-	spontaneous_wright	-	391ef0ac2c73f715ec3fd540f7952d1f	f8579450-5b07-4fc2-a5c9-33beaad5acb7	nextflow run main.nf -preview
+2026-09-06 09:49:21	-	trusting_majorana	-	391ef0ac2c73f715ec3fd540f7952d1f	49611bb8-1032-4922-bf8a-c89dd1b828bf	nextflow run main.nf -preview
+2026-09-06 09:50:11	-	jovial_allen	-	391ef0ac2c73f715ec3fd540f7952d1f	27f5cdc1-59ce-4db2-823e-eb71fde59935	nextflow run main.nf --manifest /tmp/vep_manifest_parse_test.csv --outdir /tmp/vep_parse_test
