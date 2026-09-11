@@ -4,13 +4,13 @@ nextflow.enable.dsl = 2
 
 /*
 ===============================================================================
-GEL CloudOS | REGENIE Step 2 rare ncRNA/pseudogene exonic association analysis
+GEL CloudOS | REGENIE Step 2 rare melanocyte cCRE association analysis
 Author: Shelley
 
 Purpose
 -------
 Reuse the working GEL GWAS PGEN/phenotype/covariate/LOCO framework while
-preserving the supplied UKBB rare-ncRNA mask and association settings.
+preserving the supplied UKBB rare-cCRE mask and association settings.
 
 Default design
 --------------
@@ -32,12 +32,12 @@ Inputs
 ------
 All seven input locations are supplied via CloudOS parameters (see config).
 IDs in annotations, set lists, QC lists and exclusions must match PVAR IDs.
-Precomputed ncRNA/pseudogene exonic masks are used directly; this workflow does not rebuild
-annotations or alter the gene or exon definitions.
+Precomputed cCRE masks are used directly; this workflow does not rebuild
+annotations or alter the cCRE definitions.
 
 Outputs
 -------
-UKBB-style <outdir>/<mask>/AAF_<AAF>/chrN.ncRNA_pseudogene_exonic.<mask>.AAF_<AAF>* filenames.
+UKBB-style <outdir>/<mask>/AAF_<AAF>/chrN.Melanocyte_cCRE.<mask>.AAF_<AAF>* filenames.
 Association results and mask SNP lists are uncompressed. REGENIE logs,
 burden-file reports, console logs, resolved commands, local prediction lists,
 and per-task QC summaries are retained under the corresponding logs/ folder.
@@ -47,7 +47,7 @@ Validation scope
 ----------------
 Validate file availability, small-file schemas, input row counts, and output
 structure. REGENIE performs sample matching and burden-input checking.
-The QC TSV records result rows and represented ncRNA/pseudogene genes; it does not certify
+The QC TSV records result rows and represented cCRE regions; it does not certify
 convergence or a nonmissing P value for every test. Inspect REGENIE logs and
 burden reports. Pipeline logs can contain controlled-data identifiers.
 
@@ -100,7 +100,7 @@ def chromosomeValues(value) {
 // Step 2. One REGENIE task per chromosome x mask x AAF
 // ============================================================================
 
-process REGENIE_RARE_NCRNA {
+process REGENIE_RARE_CCRE {
 
     tag "chr${chr}:${mask}:AAF_${aaf}"
 
@@ -123,9 +123,9 @@ process REGENIE_RARE_NCRNA {
           path(exclude_list, name: 'gnomad_exclude.txt'),
           val(mask),
           val(aaf),
-          path(annotation, name: 'ncrna.annotation.txt'),
-          path(setlist, name: 'ncrna.setlist.txt'),
-          path(maskdef, name: 'ncrna.maskdef.txt')
+          path(annotation, name: 'ccre.annotation.txt'),
+          path(setlist, name: 'ccre.setlist.txt'),
+          path(maskdef, name: 'ccre.maskdef.txt')
 
     path phenotype, name: 'GEL_CM_REGENIE.phenotype.tsv'
     path covariates, name: 'GEL_CM_REGENIE.covariates.tsv'
@@ -134,28 +134,28 @@ process REGENIE_RARE_NCRNA {
     output:
 
     tuple val(chr), val(mask), val(aaf),
-          path("chr${chr}.ncRNA_pseudogene_exonic.${mask}.AAF_${aaf}_CM.regenie"), emit: results
+          path("chr${chr}.Melanocyte_cCRE.${mask}.AAF_${aaf}_CM.regenie"), emit: results
 
     tuple val(chr), val(mask), val(aaf),
-          path("chr${chr}.ncRNA_pseudogene_exonic.${mask}.AAF_${aaf}_masks.snplist"), emit: mask_snplists
+          path("chr${chr}.Melanocyte_cCRE.${mask}.AAF_${aaf}_masks.snplist"), emit: mask_snplists
 
     tuple val(chr), val(mask), val(aaf),
-          path("chr${chr}.ncRNA_pseudogene_exonic.${mask}.AAF_${aaf}.qc.tsv"), emit: qc_summaries
+          path("chr${chr}.Melanocyte_cCRE.${mask}.AAF_${aaf}.qc.tsv"), emit: qc_summaries
 
     tuple val(chr), val(mask), val(aaf),
-          path("chr${chr}.ncRNA_pseudogene_exonic.${mask}.AAF_${aaf}.log"),
-          path("chr${chr}.ncRNA_pseudogene_exonic.${mask}.AAF_${aaf}.console.log"),
-          path("chr${chr}.ncRNA_pseudogene_exonic.${mask}.AAF_${aaf}.command.sh"),
-          path("chr${chr}.ncRNA_pseudogene_exonic.${mask}.AAF_${aaf}.pred.list"), emit: logs
+          path("chr${chr}.Melanocyte_cCRE.${mask}.AAF_${aaf}.log"),
+          path("chr${chr}.Melanocyte_cCRE.${mask}.AAF_${aaf}.console.log"),
+          path("chr${chr}.Melanocyte_cCRE.${mask}.AAF_${aaf}.command.sh"),
+          path("chr${chr}.Melanocyte_cCRE.${mask}.AAF_${aaf}.pred.list"), emit: logs
 
     // The report may be absent when REGENIE finds nothing to report.
     tuple val(chr), val(mask), val(aaf),
-          path("chr${chr}.ncRNA_pseudogene_exonic.${mask}.AAF_${aaf}_masks_report.txt"),
+          path("chr${chr}.Melanocyte_cCRE.${mask}.AAF_${aaf}_masks_report.txt"),
           optional: true, emit: burden_reports
 
     script:
 
-    def prefix = "chr${chr}.ncRNA_pseudogene_exonic.${mask}.AAF_${aaf}"
+    def prefix = "chr${chr}.Melanocyte_cCRE.${mask}.AAF_${aaf}"
 
     """
     #!/usr/bin/env bash
@@ -168,7 +168,7 @@ process REGENIE_RARE_NCRNA {
     set -euo pipefail
 
     echo "============================================================"
-    echo "GEL REGENIE rare-ncRNA association: ${prefix}"
+    echo "GEL REGENIE rare-cCRE association: ${prefix}"
     echo "Attempt: ${task.attempt} | CPUs: ${task.cpus}"
     echo "Container: ${params.regenie_image}"
     date -u
@@ -183,8 +183,8 @@ process REGENIE_RARE_NCRNA {
 
     for input_file in dragen.pgen dragen.pvar dragen.psam variant_ids.txt \\
         GEL_CM_REGENIE.phenotype.tsv GEL_CM_REGENIE.covariates.tsv \\
-        GEL_CM_REGENIE_step1_1.loco ncrna.annotation.txt \\
-        ncrna.setlist.txt ncrna.maskdef.txt
+        GEL_CM_REGENIE_step1_1.loco ccre.annotation.txt \\
+        ccre.setlist.txt ccre.maskdef.txt
     do
         if [[ ! -s "\${input_file}" ]]; then
             echo "[ERROR] Missing or empty input: \${input_file}" >&2
@@ -210,22 +210,22 @@ process REGENIE_RARE_NCRNA {
     }
 
     awk -v mask='${mask}' 'NF!=2 || \$1!=mask || \$2!=mask {bad=1}
-         END {exit (bad || NR!=1)}' ncrna.maskdef.txt || {
+         END {exit (bad || NR!=1)}' ccre.maskdef.txt || {
         echo '[ERROR] Mask definition does not match the selected mask.' >&2; exit 1;
     }
 
-    awk -v mask='${mask}' 'NF!=3 || \$3!=mask {exit 1}' ncrna.annotation.txt || {
+    awk -v mask='${mask}' 'NF!=3 || \$3!=mask {exit 1}' ccre.annotation.txt || {
         echo '[ERROR] Malformed annotation rows or incorrect mask label.' >&2; exit 1;
     }
 
     awk -v chr='${chr}' 'NF!=4 || \$2!=chr || \$3!~/^[0-9]+\$/ || \$3<1 {exit 1}' \\
-        ncrna.setlist.txt || {
+        ccre.setlist.txt || {
         echo '[ERROR] Malformed set-list row or chromosome mismatch.' >&2; exit 1;
     }
 
     echo '[INFO] Input row counts (before REGENIE filtering):'
-    wc -l variant_ids.txt gnomad_exclude.txt ncrna.annotation.txt ncrna.setlist.txt
-    cat ncrna.maskdef.txt
+    wc -l variant_ids.txt gnomad_exclude.txt ccre.annotation.txt ccre.setlist.txt
+    cat ccre.maskdef.txt
 
     # ------------------------------------------------------------------------
     # 2. Generate a prediction list using the task-local LOCO filename
@@ -239,7 +239,7 @@ process REGENIE_RARE_NCRNA {
     cat GEL_CM_REGENIE_step1_pred.list
 
     # ------------------------------------------------------------------------
-    # 3. Preserve the UKBB rare-ncRNA analysis settings
+    # 3. Preserve the UKBB rare-cCRE analysis settings
     # ------------------------------------------------------------------------
 
     cat > '${prefix}.command.sh' <<'COMMAND'
@@ -257,9 +257,9 @@ process REGENIE_RARE_NCRNA {
         --catCovarList genetic_sex,study_source \\
         --maxCatLevels 30 \\
         --pred GEL_CM_REGENIE_step1_pred.list \\
-        --anno-file ncrna.annotation.txt \\
-        --set-list ncrna.setlist.txt \\
-        --mask-def ncrna.maskdef.txt \\
+        --anno-file ccre.annotation.txt \\
+        --set-list ccre.setlist.txt \\
+        --mask-def ccre.maskdef.txt \\
         --aaf-bins ${aaf} \\
         --vc-maxAAF ${aaf} \\
         --vc-tests skato,acato-full \\
@@ -279,7 +279,7 @@ process REGENIE_RARE_NCRNA {
     bash '${prefix}.command.sh'
 
     # ------------------------------------------------------------------------
-    # 4. Require REGENIE outputs and summarize represented result ncRNA/pseudogene genes
+    # 4. Require REGENIE outputs and summarize represented result cCRE regions
     # ------------------------------------------------------------------------
 
     for output_file in '${prefix}_CM.regenie' '${prefix}_masks.snplist' '${prefix}.log'
@@ -290,10 +290,9 @@ process REGENIE_RARE_NCRNA {
     done
 
     # REGENIE may prepend ## mask metadata. Locate the actual header, then
-    # count records, distinct Ensembl gene IDs, and missing LOG10P values by TEST.
-    # Remove the selected mask suffix; preserve the complete input gene ID.
+    # count records, distinct cCRE IDs, and missing LOG10P values by TEST.
     awk -v chr='${chr}' -v mask='${mask}' -v aaf='${aaf}' '
-        BEGIN {OFS="\\t"; print "chromosome","mask","aaf","test","result_rows","genes","missing_log10p"}
+        BEGIN {OFS="\\t"; print "chromosome","mask","aaf","test","result_rows","regions","missing_log10p"}
         /^##/ {next}
         !header {
             for(i=1;i<=NF;i++) {name=\$i; sub(/^#/,"",name); col[name]=i}
@@ -304,17 +303,15 @@ process REGENIE_RARE_NCRNA {
         }
         NF {
             if(NF!=width) {print "[ERROR] Inconsistent result column count" > "/dev/stderr"; bad=1; exit 1}
-            test=\$(col["TEST"]); id=\$(col["ID"]); marker="." mask "."; boundary=index(id,marker)
-            if(!boundary) {print "[ERROR] Result ID lacks selected mask suffix" > "/dev/stderr"; bad=1; exit 1}
-            gene=substr(id,1,boundary-1)
+            test=\$(col["TEST"]); id=\$(col["ID"]); split(id,parts,"[.]"); region=parts[1]
             rows[test]++; total++
-            if(!seen[test SUBSEP gene]++) genes[test]++
+            if(!seen[test SUBSEP region]++) regions[test]++
             p=\$(col["LOG10P"])
             if(p=="NA" || p=="NaN" || p=="nan" || p=="-nan" || p==".") missing[test]++
         }
         END {
             if(bad || !header || !total) exit 1
-            for(test in rows) print chr,mask,aaf,test,rows[test],genes[test],missing[test]+0
+            for(test in rows) print chr,mask,aaf,test,rows[test],regions[test],missing[test]+0
         }' '${prefix}_CM.regenie' > '${prefix}.qc.tsv'
 
     cat '${prefix}.qc.tsv'
@@ -336,13 +333,13 @@ workflow {
 
     if (params.help) {
         log.info '''
-GEL REGENIE rare-ncRNA pipeline
+GEL REGENIE rare-cCRE pipeline
 Required: --pgen_root --variant_list_dir --gnomad_exclude_dir --pheno_file
           --covar_file --step1_loco --mask_dir
 Default:  --chromosomes 1-22
           --masks CADD,GERP,JARVIS,FUNC_ALL,ALL
           --aaf_thresholds 0.01,0.001,0.0001
-Output:   --outdir Rare-ncRNA/Results
+Output:   --outdir Rare-cCRE/Results
 Pilot:    --chromosomes 21 --masks CADD --aaf_thresholds 0.01
 Resources: --task_cpus 16 --task_memory '40 GB' --task_time 7d
 CloudOS supplies the execution backend and work directory.
@@ -416,5 +413,5 @@ CloudOS supplies the execution backend and work directory.
         }
     }
 
-    REGENIE_RARE_NCRNA(task_ch, phenotype_ch, covariates_ch, loco_ch)
+    REGENIE_RARE_CCRE(task_ch, phenotype_ch, covariates_ch, loco_ch)
 }
